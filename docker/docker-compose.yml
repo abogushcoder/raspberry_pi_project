@@ -1,0 +1,11 @@
+version: '3'
+services:
+  curse-word-detector:
+    image: your-dockerhub-username/curse-word-detector:latest
+    restart: always
+    env_file:
+      - config.env
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "5000:5000"
