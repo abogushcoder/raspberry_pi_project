@@ -6,31 +6,89 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Install Docker if not installed
-if ! command -v docker &> /dev/null; then
-    echo "Docker not found, installing..."
-    curl -sSL https://get.docker.com | sh
-    usermod -aG docker $USER
-    echo "Docker installed. You may need to log out and back in for group changes to take effect."
-fi
-
-# Install Docker Compose if not installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "Docker Compose not found, installing..."
-    apt-get update
-    apt-get install -y docker-compose
-fi
-
-# Install audio dependencies
-echo "Installing audio dependencies..."
+# Update system packages
+echo "Updating system packages..."
 apt-get update
-apt-get install -y portaudio19-dev espeak alsa-utils
+apt-get upgrade -y
 
-# Make the build script executable
-cd docker
-chmod +x build_and_deploy.sh
+# Install system dependencies
+echo "Installing dependencies..."
+apt-get install -y python3 python3-pip portaudio19-dev espeak alsa-utils mariadb-server mariadb-client
+
+# Install Python dependencies
+echo "Installing Python packages..."
+pip3 install pyaudio vosk mariadb python-dotenv
+
+# Create project directory
+PROJECT_DIR="/home/pi/curse_word_detector"
+echo "Creating project directory at $PROJECT_DIR..."
+mkdir -p $PROJECT_DIR
+mkdir -p $PROJECT_DIR/scripts
+mkdir -p $PROJECT_DIR/vosk-model
+
+# Copy files to project directory
+cp config.env $PROJECT_DIR/
+cp curse_word_detector.py $PROJECT_DIR/
+cp scripts/play_audio.py $PROJECT_DIR/scripts/
+cp database_setup.sql $PROJECT_DIR/
+cp setup_database.sh $PROJECT_DIR/
+
+# Make scripts executable
+chmod +x $PROJECT_DIR/setup_database.sh
+chmod +x $PROJECT_DIR/scripts/play_audio.py
+
+# Configure MariaDB
+echo "Configuring MariaDB..."
+systemctl enable mariadb
+systemctl start mariadb
+
+# Create database user and set permissions
+echo "Creating database user and configuring database..."
+mysql -e "CREATE USER IF NOT EXISTS 'pi_user'@'localhost' IDENTIFIED BY 'yourpassword';"
+mysql -e "GRANT ALL PRIVILEGES ON curse_word_db.* TO 'pi_user'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
+
+# Create systemd service file
+echo "Creating systemd service..."
+cat > /etc/systemd/system/curse-word-detector.service << EOF
+[Unit]
+Description=Curse Word Detector Service
+After=mariadb.service
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/curse_word_detector
+ExecStart=/usr/bin/python3 /home/pi/curse_word_detector/curse_word_detector.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Download Vosk model
+echo "Downloading Vosk model (if needed)..."
+if [ ! -f "$PROJECT_DIR/vosk-model/final.mdl" ]; then
+    apt-get install -y wget unzip
+    cd $PROJECT_DIR
+    wget -q -O vosk-model.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+    unzip -q vosk-model.zip
+    mv vosk-model-small-en-us-0.15/* vosk-model/
+    rm -rf vosk-model-small-en-us-0.15 vosk-model.zip
+    echo "Vosk model downloaded and extracted"
+fi
+
+# Run database setup script
+echo "Setting up database..."
+cd $PROJECT_DIR
+./setup_database.sh
+
+# Enable and start service
+systemctl enable curse-word-detector.service
 
 echo "Setup complete!"
 echo "Next steps:"
-echo "1. Review docker/config.env and update the curse words list."
-echo "2. Run docker/build_and_deploy.sh to build and start the containers."
+echo "1. Review /home/pi/curse_word_detector/config.env and update the curse words list."
+echo "2. Start the service with: sudo systemctl start curse-word-detector.service"
+echo "3. Check status with: sudo systemctl status curse-word-detector.service"

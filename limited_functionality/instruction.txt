@@ -1,0 +1,175 @@
+# Raspberry Pi Curse Word Detector - Deployment Instructions
+
+This guide provides step-by-step instructions for deploying the Curse Word Detector on a Raspberry Pi without using Docker.
+
+## Prerequisites
+
+- Raspberry Pi (3 or newer recommended) with Raspberry Pi OS (32-bit or 64-bit)
+- Microphone connected to the Raspberry Pi
+- Speaker connected to the Raspberry Pi
+- Internet connection for downloading dependencies
+
+## Deployment Steps
+
+### 1. Prepare Your Raspberry Pi
+
+1. Ensure your Raspberry Pi is up-to-date:
+   ```
+   sudo apt-get update
+   sudo apt-get upgrade -y
+   ```
+
+2. Connect your microphone and speakers to the Raspberry Pi
+   - Test your microphone with: `arecord -d 5 test.wav`
+   - Test your speakers with: `aplay test.wav`
+
+### 2. Transfer Files to Raspberry Pi
+
+1. Copy the entire project directory to your Raspberry Pi:
+   - Using SCP: `scp -r /path/to/limited_functionality pi@raspberrypi:/home/pi/`
+   - Or using a USB drive and then copy the files
+
+2. Navigate to the project directory:
+   ```
+   cd /home/pi/limited_functionality
+   ```
+
+### 3. Run the Setup Script
+
+1. Make the setup script executable:
+   ```
+   chmod +x setup.sh
+   ```
+
+2. Run the setup script as root:
+   ```
+   sudo ./setup.sh
+   ```
+
+   This script will:
+   - Install all necessary system dependencies
+   - Install required Python packages
+   - Set up the MariaDB database
+   - Create a systemd service for auto-starting
+   - Download the Vosk speech recognition model
+   - Configure everything to run directly on your Raspberry Pi
+
+### 4. Configure the Application
+
+1. Edit the config.env file to customize settings:
+   ```
+   sudo nano /home/pi/curse_word_detector/config.env
+   ```
+
+2. Update the curse words list with your preferred words to detect
+   - Modify the CURSE_WORDS line with a comma-separated list
+   - Example: `CURSE_WORDS=word1,word2,word3`
+
+3. Customize warning messages in the config file
+   - FIRST_CURSE_WARNING: Message for first detection
+   - THIRD_CURSE_WARNING: Message for third detection
+
+### 5. Start the Service
+
+1. Start the curse word detector service:
+   ```
+   sudo systemctl start curse-word-detector.service
+   ```
+
+2. Check the service status:
+   ```
+   sudo systemctl status curse-word-detector.service
+   ```
+
+3. View the logs to ensure everything is working:
+   ```
+   sudo journalctl -u curse-word-detector.service -f
+   ```
+
+### 6. Enable Auto-Start on Boot
+
+1. Enable the service to start on system boot:
+   ```
+   sudo systemctl enable curse-word-detector.service
+   ```
+
+### 7. Troubleshooting
+
+If you encounter issues:
+
+1. Check the logs for errors:
+   ```
+   sudo journalctl -u curse-word-detector.service -e
+   ```
+
+2. Ensure the database is running:
+   ```
+   sudo systemctl status mariadb
+   ```
+
+3. Test the microphone access:
+   ```
+   arecord -l
+   ```
+
+4. Verify MariaDB connection:
+   ```
+   mysql -u pi_user -p -e "USE curse_word_db; SELECT * FROM word_counts;"
+   ```
+   (Enter the password when prompted: 'yourpassword')
+
+5. Restart the service after making changes:
+   ```
+   sudo systemctl restart curse-word-detector.service
+   ```
+
+### 8. Advanced Configuration
+
+1. Adjust audio settings:
+   - Change volume with: `alsamixer`
+   - Set default audio device: `sudo nano /etc/asound.conf`
+
+2. Modify the speech detection sensitivity:
+   - Edit the Python code in: `/home/pi/curse_word_detector/curse_word_detector.py`
+
+3. To update the list of curse words after initial setup:
+   - Edit the database directly:
+   ```
+   mysql -u pi_user -p curse_word_db
+   INSERT INTO word_counts (word) VALUES ('new_word');
+   ```
+
+### 9. Security Considerations
+
+1. Change the default database password:
+   ```
+   sudo mysql -e "ALTER USER 'pi_user'@'localhost' IDENTIFIED BY 'new_password';"
+   ```
+   Then update the password in config.env
+
+2. Restrict access to the config file:
+   ```
+   sudo chmod 600 /home/pi/curse_word_detector/config.env
+   ```
+
+### 10. Uninstalling
+
+If you need to remove the application:
+
+1. Stop and disable the service:
+   ```
+   sudo systemctl stop curse-word-detector.service
+   sudo systemctl disable curse-word-detector.service
+   sudo rm /etc/systemd/system/curse-word-detector.service
+   ```
+
+2. Remove the project files:
+   ```
+   sudo rm -rf /home/pi/curse_word_detector
+   ```
+
+3. Optionally remove MariaDB:
+   ```
+   sudo apt-get remove --purge mariadb-server mariadb-client
+   sudo apt-get autoremove
+   ```
