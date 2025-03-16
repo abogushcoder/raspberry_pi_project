@@ -9,9 +9,8 @@ This is a simplified version of the curse word detector that focuses on:
 ## Features
 
 - **Speech Recognition**: Uses Vosk for offline speech-to-text processing
-- **Word Tracking**: Tracks each curse word individually in a MySQL database
+- **Word Tracking**: Tracks each curse word individually in a MariaDB database
 - **Smart Notifications**: Uses modulo operator to announce on the 1st and every 3rd occurrence
-- **Docker Containerized**: Easy setup and deployment with Docker
 
 ## Requirements
 
@@ -30,49 +29,44 @@ This is a simplified version of the curse word detector that focuses on:
    ```
 3. Edit the configuration file to customize curse words:
    ```bash
-   nano docker/config.env
+   nano config.env
    ```
-4. Build and run the Docker container:
+4. Start the service:
    ```bash
-   cd docker
-   ./build_and_deploy.sh
+   sudo systemctl start curse-word-detector.service
    ```
 
 ## Configuration
 
-Edit the `docker/config.env` file to customize:
+Edit the `config.env` file to customize:
 
 - **Curse Words**: Update the `CURSE_WORDS` variable with your comma-separated list of words to detect
 - **Audio Messages**: Customize the warning messages with `FIRST_CURSE_WARNING` and `THIRD_CURSE_WARNING`
 - **Audio Settings**: Adjust volume with `AUDIO_VOLUME` (0-100)
 
-## Docker Container Management
+## Service Management
 
 - **View logs**:
   ```bash
-  cd docker
-  docker-compose logs -f
+  sudo journalctl -u curse-word-detector.service -f
   ```
 
 - **Stop the service**:
   ```bash
-  cd docker
-  docker-compose down
+  sudo systemctl stop curse-word-detector.service
   ```
 
 - **Restart the service**:
   ```bash
-  cd docker
-  docker-compose restart
+  sudo systemctl restart curse-word-detector.service
   ```
 
 ## Database Access
 
-You can connect to the MySQL database to view curse word statistics:
+You can connect to the MariaDB database to view curse word statistics:
 
 ```bash
-cd docker
-docker-compose exec db mysql -u pi_user -pyourpassword curse_word_db
+mysql -u pi_user -pyourpassword curse_word_db
 ```
 
 Then run SQL queries like:
@@ -84,4 +78,4 @@ SELECT * FROM word_counts ORDER BY count DESC;
 
 - **No audio output**: Ensure your speaker is connected and working with `aplay /usr/share/sounds/alsa/Front_Center.wav`
 - **Microphone issues**: Check if your microphone is detected with `arecord -l`
-- **Container not starting**: Check logs with `docker-compose logs -f`
+- **Service not starting**: Check logs with `sudo journalctl -u curse-word-detector.service -e`
