@@ -1,0 +1,29 @@
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: curse_word_db
+      MYSQL_USER: pi_user
+      MYSQL_PASSWORD: yourpassword
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  curse-word-detector:
+    build: .
+    restart: always
+    env_file:
+      - config.env
+    environment:
+      - MYSQL_HOST=db
+    volumes:
+      - ./vosk_model:/app/vosk-model
+    devices:
+      - /dev/snd:/dev/snd
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:

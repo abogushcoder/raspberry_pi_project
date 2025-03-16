@@ -19,26 +19,29 @@ from pathlib import Path
 import dotenv
 
 # Try to find and load the config.env file
+
+
 def load_environment():
     # Check for config.env in the current directory
     local_env = Path("config.env")
     if local_env.exists():
         dotenv.load_dotenv(local_env)
         return True
-    
+
     # Check for config.env in the docker directory
     docker_env = Path("../config.env")
     if docker_env.exists():
         dotenv.load_dotenv(docker_env)
         return True
-    
+
     # Check one more level up
     root_env = Path("../../docker/config.env")
     if root_env.exists():
         dotenv.load_dotenv(root_env)
         return True
-    
+
     return False
+
 
 # Make a best effort to load environment variables
 if not load_environment():

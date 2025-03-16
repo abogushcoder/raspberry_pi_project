@@ -30,9 +30,6 @@ RUN chmod +x scripts/*.py
 # Create directory for Vosk model
 RUN mkdir -p vosk-model
 
-# Expose port for heartbeat API
-EXPOSE 5000
-
 # Set up entrypoint script
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh

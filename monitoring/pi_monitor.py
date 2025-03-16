@@ -78,21 +78,51 @@ def ping(host):
 
 def block_device():
     """
-    Blocks the target device by sending a request to the router
+    Blocks the target device by calling the block_device.py script
     """
-    router_url = f"http://{ROUTER_IP}{ROUTER_API_PATH_BLOCK}"
-    payload = {"ip": CHILD_DEVICE_IP}
+    # Get the directory of this script
+    current_dir = Path(__file__).parent.absolute()
+    
+    # Find the block_device.py script
+    script_paths = [
+        current_dir / "block_device.py",
+        current_dir / "../docker/scripts/block_device.py",
+        Path("/app/scripts/block_device.py")  # For Docker environment
+    ]
+    
+    script_path = None
+    for path in script_paths:
+        if path.exists():
+            script_path = path
+            break
+    
+    if not script_path:
+        print("Error: Could not find block_device.py script")
+        return False
     
     try:
-        response = requests.post(
-            router_url, 
-            auth=(ROUTER_USERNAME, ROUTER_PASSWORD), 
-            data=payload
+        # Run the block_device.py script
+        child_mac = os.getenv("CHILD_DEVICE_MAC", "")
+        cmd = [sys.executable, str(script_path)]
+        if child_mac:
+            cmd.append(child_mac)
+            
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
         )
-        print(f"Blocked {CHILD_DEVICE_IP}: Status {response.status_code}")
-        return True
+        
+        if result.returncode == 0:
+            print(f"Device blocked successfully: {result.stdout.strip()}")
+            return True
+        else:
+            print(f"Failed to block device: {result.stderr.strip()}")
+            return False
     except Exception as e:
-        print(f"Failed to block device: {e}")
+        print(f"Failed to execute block_device.py: {e}")
         return False
 
 
