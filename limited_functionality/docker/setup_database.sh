@@ -10,7 +10,7 @@ IFS=',' read -ra CURSE_WORDS_ARRAY <<< "$CURSE_WORDS"
 cp database_setup.sql database_setup_temp.sql
 
 # Replace database variables
-sed -i "s/\${MYSQL_DATABASE}/$MYSQL_DATABASE/g" database_setup_temp.sql
+sed -i "s/\${MYSQL_DATABASE}/$MARIADB_DATABASE/g" database_setup_temp.sql
 
 # Replace curse word placeholders
 if [ ${#CURSE_WORDS_ARRAY[@]} -ge 1 ]; then
@@ -33,7 +33,7 @@ fi
 
 # Run the SQL script
 echo "Running database setup with credentials from config.env..."
-mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" < database_setup_temp.sql
+mariadb -h "$MARIADB_HOST" -u "$MARIADB_USER" -p"$MARIADB_PASSWORD" < database_setup_temp.sql
 
 # Clean up
 rm database_setup_temp.sql

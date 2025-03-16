@@ -1,7 +1,7 @@
 from play_audio import play_message
 import sys
 import pyaudio
-import mysql.connector
+import mariadb
 import json
 import os
 import threading
@@ -16,12 +16,12 @@ model_path = os.getenv("VOSK_MODEL_PATH", "vosk-model")
 model = Model(model_path)
 recognizer = KaldiRecognizer(model, 16000)
 
-# Connect to local MySQL database
-db = mysql.connector.connect(
-    host=os.getenv("MYSQL_HOST", "localhost"),
-    user=os.getenv("MYSQL_USER", "pi_user"),
-    password=os.getenv("MYSQL_PASSWORD", "yourpassword"),
-    database=os.getenv("MYSQL_DATABASE", "curse_word_db")
+# Connect to local MariaDB database
+db = mariadb.connect(
+    host=os.getenv("MARIADB_HOST", "localhost"),
+    user=os.getenv("MARIADB_USER", "pi_user"),
+    password=os.getenv("MARIADB_PASSWORD", "yourpassword"),
+    database=os.getenv("MARIADB_DATABASE", "curse_word_db")
 )
 cursor = db.cursor()
 

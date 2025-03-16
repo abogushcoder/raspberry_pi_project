@@ -1,4 +1,4 @@
 pyaudio
 vosk
-mysql-connector-python
+mariadb
 python-dotenv

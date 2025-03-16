@@ -1,15 +1,15 @@
 version: '3'
 services:
   db:
-    image: mysql:5.7
+    image: mariadb:latest
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: curse_word_db
-      MYSQL_USER: pi_user
-      MYSQL_PASSWORD: yourpassword
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: curse_word_db
+      MARIADB_USER: pi_user
+      MARIADB_PASSWORD: yourpassword
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
 
   curse-word-detector:
     build: .
@@ -17,7 +17,7 @@ services:
     env_file:
       - config.env
     environment:
-      - MYSQL_HOST=db
+      - MARIADB_HOST=db
     volumes:
       - ./vosk_model:/app/vosk-model
     devices:
@@ -26,4 +26,4 @@ services:
       - db
 
 volumes:
-  mysql_data:
+  mariadb_data:
