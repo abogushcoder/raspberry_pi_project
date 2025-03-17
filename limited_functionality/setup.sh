@@ -13,11 +13,7 @@ apt-get upgrade -y
 
 # Install system dependencies
 echo "Installing dependencies..."
-apt-get install -y python3 python3-pip portaudio19-dev espeak alsa-utils mariadb-server mariadb-client
-
-# Install Python dependencies
-echo "Installing Python packages..."
-pip3 install pyaudio vosk mariadb python-dotenv
+apt-get install -y python3 python3-pip python3-venv python3-full portaudio19-dev espeak alsa-utils mariadb-server mariadb-client
 
 # Create project directory
 PROJECT_DIR="/home/pi/curse_word_detector"
@@ -25,6 +21,16 @@ echo "Creating project directory at $PROJECT_DIR..."
 mkdir -p $PROJECT_DIR
 mkdir -p $PROJECT_DIR/scripts
 mkdir -p $PROJECT_DIR/vosk-model
+
+# Create and activate virtual environment
+echo "Creating virtual environment..."
+VENV_DIR="$PROJECT_DIR/venv"
+python3 -m venv $VENV_DIR
+
+# Install Python dependencies in the virtual environment
+echo "Installing Python packages..."
+$VENV_DIR/bin/pip install --upgrade pip
+$VENV_DIR/bin/pip install pyaudio vosk mariadb python-dotenv
 
 # Copy files to project directory
 cp config.env $PROJECT_DIR/
@@ -58,7 +64,7 @@ After=mariadb.service
 [Service]
 User=pi
 WorkingDirectory=/home/pi/curse_word_detector
-ExecStart=/usr/bin/python3 /home/pi/curse_word_detector/curse_word_detector.py
+ExecStart=/home/pi/curse_word_detector/venv/bin/python /home/pi/curse_word_detector/curse_word_detector.py
 Restart=always
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1
